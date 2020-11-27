@@ -29,7 +29,7 @@ def update_graph(ts_xid, time_filter, show_raw_dps, n_points):
     if start == end:
         end += 1  # At least 1 ms duration
 
-    granularity, human_gran_txt = compute_granularity(start, end, show_raw_dps, n_points)
+    granularity, human_granularity = compute_granularity(start, end, show_raw_dps, n_points)
     if figure_shows_raw_dps(granularity):
         agg_gran_kw = dict(include_outside_points=True)
     else:
@@ -38,7 +38,7 @@ def update_graph(ts_xid, time_filter, show_raw_dps, n_points):
     dps = client.datapoints.retrieve(external_id=ts_xid, start=start, end=end, **agg_gran_kw)
     datetime_index = pd.to_datetime(dps.timestamp, unit="ms")
 
-    fig = go.Figure(layout=create_fig_layout(ts, human_gran_txt, datetime_index.size))
+    fig = go.Figure(layout=create_fig_layout(ts, human_granularity, datetime_index.size))
     if figure_shows_raw_dps(granularity):
         trace_kw = dict(y=dps.value, name="Raw", mode="lines+markers", showlegend=True)
     else:
@@ -54,9 +54,9 @@ def figure_shows_raw_dps(granularity):
     return granularity == RAW_DPS_GRAN
 
 
-def create_fig_layout(ts, human_gran_txt, n_points_plotted):
+def create_fig_layout(ts, human_granularity, n_points_plotted):
     return go.Layout(
-        title=f"{ts.name} [{ts.external_id}]\nGranularity: {human_gran_txt}, drawn points: {n_points_plotted}",
+        title=f"{ts.name} [{ts.external_id}]\nGranularity: {human_granularity}, drawn points: {n_points_plotted}",
         xaxis={"title": "Time"},
         yaxis={"title": f"Value [{ts.unit or 'N/A'}]"},
     )
@@ -99,7 +99,7 @@ def add_main_line(fig, datetime_index, trace_kw):
 
 
 def set_xaxis(fig, start, end):
-    # HACK to fix axes (dash tz problem...): Please don't ask about this (it"s so döööörty)
+    # HACK to fix axes (dash tz problem...): Please don't ask about this (it's so döööörty)
     start = 1000 * datetime.utcfromtimestamp(start / 1000).astimezone().timestamp()
     end = 1000 * datetime.utcfromtimestamp(end / 1000).astimezone().timestamp()
     fig.update_xaxes(range=[start, end])
